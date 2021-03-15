@@ -7,7 +7,7 @@ import requests
 import browser_cookie3
 
 ACT_ID = 'e202102251931481'
-DOMAIN_NAME = '.mihoyod.com'
+DOMAIN_NAME = '.mihoyo.com'
 VER = '1.0 for Windows'
 
 run_scheduler = True
@@ -95,8 +95,9 @@ def claimReward():
     try:
         response = requests.post('https://hk4e-api-os.mihoyo.com/event/sol/sign', headers=headers, params=params, cookies=cookies, json=data)
         return response.json()
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.ConnectionError as e:
         print("CONNECTION ERROR: cannot claim daily check-in reward")
+        print(e)
         return False
     except Exception as e:
         print("ERROR: ")
@@ -112,7 +113,7 @@ def configScheduler():
         f'$Time = New-ScheduledTaskTrigger -Daily -At 3am \n',
         f'$Action = New-ScheduledTaskAction -Execute "{exec_path}" -Argument "-R" \n',
         f'$Setting = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -WakeToRun -RunOnlyIfNetworkAvailable -MultipleInstances Parallel -Priority 3 -RestartCount 30 -RestartInterval (New-TimeSpan -Minutes 1) \n',
-        f'Register-ScheduledTask -Force -TaskName "HoyolabCheckInBot" -Trigger $Time -Action $Action -Settings $Setting -Description "SIX Auto Presence Submitter {VER}" -RunLevel Highest'
+        f'Register-ScheduledTask -Force -TaskName "HoyolabCheckInBot" -Trigger $Time -Action $Action -Settings $Setting -Description "Genshin Hoyolab Daily Check-In Bot {VER}" -RunLevel Highest'
     ), creationflags=0x08000000)
     if ret_code:
         print("PERMISSION ERROR: please run as administrator to enable task scheduling")
