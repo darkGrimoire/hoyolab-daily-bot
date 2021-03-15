@@ -36,6 +36,7 @@ if args.version:
 if args.runascron:
     run_scheduler = False
 
+# API FUNCTIONS
 def getDailyStatus():
     headers = {
         'Accept': 'application/json, text/plain, */*',
@@ -98,17 +99,25 @@ def claimReward():
         print(e)
         return False
 
+
+# SCHEDULER CONFIGURATION
 def configScheduler():
+    print("Running scheduler...")
     ret_code = subprocess.call((
         f'powershell',
-        f'$Time = New-ScheduledTaskTrigger -Daily -At 4am \n',
-        f'$Action = New-ScheduledTaskAction -Execute "{exec_path}" \n',
+        f'$Time = New-ScheduledTaskTrigger -Daily -At 3am \n',
+        f'$Action = New-ScheduledTaskAction -Execute "{exec_path}" -Argument "-R" \n',
         f'$Setting = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -WakeToRun -RunOnlyIfNetworkAvailable -MultipleInstances Parallel -Priority 3 -RestartCount 30 -RestartInterval (New-TimeSpan -Minutes 1) \n',
         f'Register-ScheduledTask -Force -TaskName "HoyolabCheckInBot" -Trigger $Time -Action $Action -Settings $Setting -Description "SIX Auto Presence Submitter {VER}" -RunLevel Highest'
     ), creationflags=0x08000000)
     if ret_code:
         print("PERMISSION ERROR: please run as administrator to enable task scheduling")
+        input()
+        sys.exit(1)
+    else:
+        print("Program scheduled daily!")
 
+# MAIN PROGRAM
 def main():
     print("Connecting to mihoyo...")
     is_done = False
