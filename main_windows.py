@@ -7,13 +7,17 @@ import requests
 import browser_cookie3
 
 ACT_ID = 'e202102251931481'
-DOMAIN_NAME = '.mihoyo.com'
+DOMAIN_NAME = '.mihoyod.com'
 VER = '1.0 for Windows'
 
 run_scheduler = True
 
 # GET COOKIES
 cookies = browser_cookie3.load(domain_name=DOMAIN_NAME)
+if len(cookies) == 0:
+    print("Cookies information not found! Please login first to hoyolab once before using the bot.")
+    print("You only need to login once for a year to https://www.hoyolab.com/genshin/ for this bot")
+    sys.exit(1)
 
 # INITIALIZE PROGRAM ENVIRONMENT
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
