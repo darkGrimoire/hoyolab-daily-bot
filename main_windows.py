@@ -1,11 +1,40 @@
+import argparse
 import time
+import os
+import sys
+import subprocess
 import requests
 import browser_cookie3
 
 ACT_ID = 'e202102251931481'
 DOMAIN_NAME = '.mihoyo.com'
+VER = '1.0 for Windows'
 
+run_scheduler = True
+
+# GET COOKIES
 cookies = browser_cookie3.load(domain_name=DOMAIN_NAME)
+
+# INITIALIZE PROGRAM ENVIRONMENT
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    app_path = os.path.dirname(sys.executable)
+    exec_path = sys.executable
+else:
+    app_path = os.path.dirname(os.path.abspath(__file__))
+    exec_path = f"python \'{os.path.abspath(__file__)}\'"
+
+# ARGPARSE
+help_text = 'Genshin Hoyolab Daily Check-In Bot\nWritten by darkGrimoire'
+parser = argparse.ArgumentParser(description=help_text)
+parser.add_argument("-v", "--version", help="show program version", action="store_true")
+parser.add_argument("-R", "--runascron", help="run program without scheduler", action="store_true")
+
+args = parser.parse_args()
+if args.version:
+    print(f"Bot ver. {VER}")
+    sys.exit(0)
+if args.runascron:
+    run_scheduler = False
 
 def getDailyStatus():
     headers = {
@@ -69,10 +98,21 @@ def claimReward():
         print(e)
         return False
 
+def configScheduler():
+    ret_code = subprocess.call((
+        f'powershell',
+        f'$Time = New-ScheduledTaskTrigger -Daily -At 4am \n',
+        f'$Action = New-ScheduledTaskAction -Execute "{exec_path}" \n',
+        f'$Setting = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -WakeToRun -RunOnlyIfNetworkAvailable -MultipleInstances Parallel -Priority 3 -RestartCount 30 -RestartInterval (New-TimeSpan -Minutes 1) \n',
+        f'Register-ScheduledTask -Force -TaskName "HoyolabCheckInBot" -Trigger $Time -Action $Action -Settings $Setting -Description "SIX Auto Presence Submitter {VER}" -RunLevel Highest'
+    ), creationflags=0x08000000)
+    if ret_code:
+        print("PERMISSION ERROR: please run as administrator to enable task scheduling")
+
 def main():
     print("Connecting to mihoyo...")
-    isDone = False
-    while not isDone:
+    is_done = False
+    while not is_done:
         check = isClaimed()
         if not check and check != None:
             print("Reward not claimed yet. Claiming reward...")
@@ -80,13 +120,16 @@ def main():
             if resp:
                 print("Claiming completed! message:")
                 print(resp['message'])
-                isDone = True
+                is_done = True
         if check:
             print("Reward has been claimed!")
-            isDone = True
-        if not isDone:
+            is_done = True
+        if not is_done:
             print("There was an error... retrying in a minute")
             time.sleep(60)
 
 if __name__ == "__main__":
+    if run_scheduler:
+        configScheduler()
     main()
+    time.sleep(2)
