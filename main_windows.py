@@ -1,5 +1,6 @@
 import argparse
 import time
+from datetime import datetime, timedelta
 import os
 import sys
 import subprocess
@@ -9,15 +10,9 @@ import browser_cookie3
 ACT_ID = 'e202102251931481'
 DOMAIN_NAME = '.mihoyo.com'
 VER = '1.0 for Windows'
+SERVER_UTC = 8
 
 run_scheduler = True
-
-# GET COOKIES
-cookies = browser_cookie3.load(domain_name=DOMAIN_NAME)
-if len(cookies) == 0:
-    print("Cookies information not found! Please login first to hoyolab once before using the bot.")
-    print("You only need to login once for a year to https://www.hoyolab.com/genshin/ for this bot")
-    sys.exit(1)
 
 # INITIALIZE PROGRAM ENVIRONMENT
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
@@ -26,6 +21,18 @@ if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
 else:
     app_path = os.path.dirname(os.path.abspath(__file__))
     exec_path = f"python \'{os.path.abspath(__file__)}\'"
+
+# SETUP LOGGING
+log = open(os.path.join(app_path, 'botlog.txt'), 'a+')
+
+# GET COOKIES
+cookies = browser_cookie3.load(domain_name=DOMAIN_NAME)
+if len(cookies) == 0:
+    print("Login information not found! Please login first to hoyolab once in Chrome/Firefox/Opera/Edge/Chromium before using the bot.")
+    print("You only need to login once for a year to https://www.hoyolab.com/genshin/ for this bot")
+    log.write('LOGIN ERROR: cookies not found\n')
+    log.close()
+    sys.exit(1)
 
 # ARGPARSE
 help_text = 'Genshin Hoyolab Daily Check-In Bot\nWritten by darkGrimoire'
@@ -36,6 +43,7 @@ parser.add_argument("-R", "--runascron", help="run program without scheduler", a
 args = parser.parse_args()
 if args.version:
     print(f"Bot ver. {VER}")
+    log.close()
     sys.exit(0)
 if args.runascron:
     run_scheduler = False
@@ -62,12 +70,15 @@ def getDailyStatus():
     except requests.exceptions.ConnectionError as e:
         print("CONNECTION ERROR: cannot get daily check-in status")
         print(e)
+        log.write('CONNECTION ERROR: cannot get daily check-in status\n')
+        log.write(repr(e) + '\n')
         return None
     except Exception as e:
         print("ERROR: ")
         print(e)
+        log.write('UNKNOWN ERROR:\n')
+        log.write(repr(e) + '\n')
         return None
-    
 
 def isClaimed():
     resp = getDailyStatus()
@@ -98,25 +109,39 @@ def claimReward():
     except requests.exceptions.ConnectionError as e:
         print("CONNECTION ERROR: cannot claim daily check-in reward")
         print(e)
-        return False
+        log.write('CONNECTION ERROR: cannot claim daily check-in reward\n')
+        log.write(repr(e) + '\n')
+        return None
     except Exception as e:
         print("ERROR: ")
         print(e)
-        return False
+        log.write('UNKNOWN ERROR:\n')
+        log.write(repr(e) + '\n')
+        return None
 
 
 # SCHEDULER CONFIGURATION
 def configScheduler():
     print("Running scheduler...")
+    cur_tz_offset = datetime.now().astimezone().utcoffset()
+    target_tz_offset = timedelta(hours=SERVER_UTC)
+    delta = (cur_tz_offset - target_tz_offset)
+    target = int((24 + (delta.total_seconds()//3600)) % 24)
+    code = 'am'
+    if target > 11:
+        target = target % 12
+        code = 'pm'
     ret_code = subprocess.call((
         f'powershell',
-        f'$Time = New-ScheduledTaskTrigger -Daily -At 3am \n',
+        f'$Time = New-ScheduledTaskTrigger -Daily -At {target}{code} \n',
         f'$Action = New-ScheduledTaskAction -Execute "{exec_path}" -Argument "-R" \n',
         f'$Setting = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -WakeToRun -RunOnlyIfNetworkAvailable -MultipleInstances Parallel -Priority 3 -RestartCount 30 -RestartInterval (New-TimeSpan -Minutes 1) \n',
         f'Register-ScheduledTask -Force -TaskName "HoyolabCheckInBot" -Trigger $Time -Action $Action -Settings $Setting -Description "Genshin Hoyolab Daily Check-In Bot {VER}" -RunLevel Highest'
     ), creationflags=0x08000000)
     if ret_code:
         print("PERMISSION ERROR: please run as administrator to enable task scheduling")
+        log.write("PERMISSION ERROR: please run as administrator to enable task scheduling\n")
+        log.close()
         input()
         sys.exit(1)
     else:
@@ -124,6 +149,7 @@ def configScheduler():
 
 # MAIN PROGRAM
 def main():
+    log.write(f'\nSTART BOT: {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}\n')
     print("Connecting to mihoyo...")
     is_done = False
     while not is_done:
@@ -132,15 +158,19 @@ def main():
             print("Reward not claimed yet. Claiming reward...")
             resp = claimReward()
             if resp:
+                log.write(f'Reward claimed at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}\n')
                 print("Claiming completed! message:")
                 print(resp['message'])
                 is_done = True
         if check:
+            log.write(f'Reward already claimed when checked at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}\n')
             print("Reward has been claimed!")
             is_done = True
         if not is_done:
+            log.write(f'Error at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}, retrying...\n')
             print("There was an error... retrying in a minute")
             time.sleep(60)
+    log.close()
 
 if __name__ == "__main__":
     if run_scheduler:
