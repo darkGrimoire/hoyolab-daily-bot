@@ -18,6 +18,16 @@ Genshin Impact's Hoyolab Daily Check-in Bot is here! The concept is simple, **ru
 2. Run program and click Yes when prompted. The program needs to be run as administrator to enable scheduling
 3. You can see what's the bot doing from `botlog.txt`.
 
+# Configuration File
+
+>I haven't release this yet because I'm waiting for [ver 0.12.1 in this library for chrome cookies bugfix](https://github.com/borisbabic/browser_cookie3). When the package has been updated, I'll release this immediately (along with MacOS supports maybe?).
+
+- **BROWSER**: You can target specific browser to be used for login. Please beware that this program doesn't support account chooser yet, so if you have multiple account you may use a browser you rarely use that only contains 1 account information.  
+Currently supported browsers are: `firefox`, `chrome`, `chromium`, `opera`, and `edge`. The default is `all`. ⚠WARNING: Currently this have issues with `chrome` cookies so please use another browser. ⚠
+- **SERVER_UTC**: Server UTC in each server is different. You can check your UTC in [Your Hoyolab Daily Check-in page.](https://webstatic-sea.mihoyo.com/ys/event/signin-sea/index.html?act_id=e202102251931481&lang=en-us) The default for Asia server is +8 UTC.
+- **DELAY_MINUTE**: Sometimes, your PC is some minutes earlier than the server time. If you're experiencing reward already claimed whenever the bot started, please add some delay.
+- **ACT_ID** and **DOMAIN_NAME** doesn't need changing. It's only there for futureproof reasons.
+
 # How to update 📈
 Just overwrite the executable file haha
 
@@ -32,7 +42,7 @@ Just overwrite the executable file haha
    ```
    pip install -r requirements.txt
    ```
-3. Run `main.py` as administrator if you want to run the scheduling, or if not use `main.py -R`
+3. Run `main_windows.py` as administrator if you want to run the scheduling, or if not use `main_windows.py -R`
 
 
 Feel free to open up issues for feature request, bugs, etc. or contribute.
