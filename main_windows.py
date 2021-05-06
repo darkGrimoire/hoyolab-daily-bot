@@ -6,11 +6,9 @@ import sys
 import subprocess
 import requests
 import browser_cookie3
+import json
 
-ACT_ID = 'e202102251931481'
-DOMAIN_NAME = '.mihoyo.com'
 VER = '1.0 for Windows'
-SERVER_UTC = 8
 
 run_scheduler = True
 
@@ -25,9 +23,44 @@ else:
 # SETUP LOGGING
 log = open(os.path.join(app_path, 'botlog.txt'), 'a+')
 
+# SETUP CONFIG
+config = None
+try:
+    config = json.load(open(os.path.join(app_path, 'config.json'), 'r'))
+    if 'BROWSER' not in config or 'SERVER_UTC' not in config or 'DELAY_MINUTE' not in config or 'ACT_ID' not in config or 'DOMAIN_NAME' not in config:
+        raise Exception("ERROR: Broken config file")
+except Exception as e:
+    print(repr(e))
+    print("Config not found/corrupted! Making default config...")
+    config = {
+        'BROWSER': 'all',
+        'SERVER_UTC': 8,
+        'DELAY_MINUTE': 0,
+        'ACT_ID': 'e202102251931481',
+        'DOMAIN_NAME': '.mihoyo.com'
+    }
+    config_file = open(os.path.join(app_path, 'config.json'), 'w')
+    config_file.write(json.dumps(config))
+
+
 # GET COOKIES
-cookies = browser_cookie3.load(domain_name=DOMAIN_NAME)
-if len(cookies) == 0:
+cookies = None
+try:
+    if config['BROWSER'].lower() == 'all':
+        cookies = browser_cookie3.load(domain_name=config['DOMAIN_NAME'])
+    elif config['BROWSER'].lower() == 'firefox':
+        cookies = browser_cookie3.firefox(domain_name=config['DOMAIN_NAME'])
+    elif config['BROWSER'].lower() == 'chrome':
+        cookies = browser_cookie3.chrome(domain_name=config['DOMAIN_NAME'])
+    elif config['BROWSER'].lower() == 'opera':
+        cookies = browser_cookie3.opera(domain_name=config['DOMAIN_NAME'])
+    elif config['BROWSER'].lower() == 'edge':
+        cookies = browser_cookie3.edge(domain_name=config['DOMAIN_NAME'])
+    elif config['BROWSER'].lower() == 'chromium':
+        cookies = browser_cookie3.chromium(domain_name=config['DOMAIN_NAME'])
+    else:
+        raise Exception("ERROR: Browser not defined!")
+except Exception as e:
     print("Login information not found! Please login first to hoyolab once in Chrome/Firefox/Opera/Edge/Chromium before using the bot.")
     print("You only need to login once for a year to https://www.hoyolab.com/genshin/ for this bot")
     log.write('LOGIN ERROR: cookies not found\n')
@@ -55,13 +88,13 @@ def getDailyStatus():
         'Accept-Language': 'en-US,en;q=0.5',
         'Origin': 'https://webstatic-sea.mihoyo.com',
         'Connection': 'keep-alive',
-        'Referer': f'https://webstatic-sea.mihoyo.com/ys/event/signin-sea/index.html?act_id={ACT_ID}&lang=en-us',
+        'Referer': f'https://webstatic-sea.mihoyo.com/ys/event/signin-sea/index.html?act_id={config["ACT_ID"]}&lang=en-us',
         'Cache-Control': 'max-age=0',
     }
 
     params = (
         ('lang', 'en-us'),
-        ('act_id', ACT_ID),
+        ('act_id', config['ACT_ID']),
     )
 
     try:
@@ -94,14 +127,14 @@ def claimReward():
         'Content-Type': 'application/json;charset=utf-8',
         'Origin': 'https://webstatic-sea.mihoyo.com',
         'Connection': 'keep-alive',
-        'Referer': f'https://webstatic-sea.mihoyo.com/ys/event/signin- sea/index.html?act_id={ACT_ID}&lang=en-us',
+        'Referer': f'https://webstatic-sea.mihoyo.com/ys/event/signin- sea/index.html?act_id={config["ACT_ID"]}&lang=en-us',
     }
 
     params = (
         ('lang', 'en-us'),
     )
 
-    data = { 'act_id':ACT_ID }
+    data = { 'act_id':config['ACT_ID'] }
 
     try:
         response = requests.post('https://hk4e-api-os.mihoyo.com/event/sol/sign', headers=headers, params=params, cookies=cookies, json=data)
@@ -124,16 +157,12 @@ def claimReward():
 def configScheduler():
     print("Running scheduler...")
     cur_tz_offset = datetime.now().astimezone().utcoffset()
-    target_tz_offset = timedelta(hours=SERVER_UTC)
+    target_tz_offset = timedelta(hours=config['SERVER_UTC'])
     delta = (cur_tz_offset - target_tz_offset)
     target = int((24 + (delta.total_seconds()//3600)) % 24)
-    code = 'am'
-    if target > 11:
-        target = target % 12
-        code = 'pm'
     ret_code = subprocess.call((
         f'powershell',
-        f'$Time = New-ScheduledTaskTrigger -Daily -At {target}{code} \n',
+        f'$Time = New-ScheduledTaskTrigger -Daily -At {target}:{config["DELAY_MINUTE"]} \n',
         f'$Action = New-ScheduledTaskAction -Execute "{exec_path}" -Argument "-R" \n',
         f'$Setting = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -WakeToRun -RunOnlyIfNetworkAvailable -MultipleInstances Parallel -Priority 3 -RestartCount 30 -RestartInterval (New-TimeSpan -Minutes 1) \n',
         f'Register-ScheduledTask -Force -TaskName "HoyolabCheckInBot" -Trigger $Time -Action $Action -Settings $Setting -Description "Genshin Hoyolab Daily Check-In Bot {VER}" -RunLevel Highest'
