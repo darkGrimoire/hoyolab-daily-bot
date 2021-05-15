@@ -20,7 +20,7 @@ Genshin Impact's Hoyolab Daily Check-in Bot is here! The concept is simple, **ru
 
 # Configuration File
 
->I haven't release this yet because I'm waiting for [ver 0.12.1 in this library for chrome cookies bugfix](https://github.com/borisbabic/browser_cookie3). When the package has been updated, I'll release this immediately (along with MacOS supports maybe?).
+>I haven't release this yet because I'm waiting for [ver 0.12.1 in this library for chrome cookies bugfix](https://github.com/borisbabic/browser_cookie3). When the package has been updated, I'll release this immediately (along with MacOS supports maybe?). For the time being, I'll pre-release it first but see the warning below if you're using Chrome browser.
 
 - **BROWSER**: You can target specific browser to be used for login. Please beware that this program doesn't support account chooser yet, so if you have multiple account you may use a browser you rarely use that only contains 1 account information.  
 Currently supported browsers are: `firefox`, `chrome`, `chromium`, `opera`, and `edge`. The default is `all`. ⚠WARNING: Currently this have issues with `chrome` cookies so please use another browser. ⚠

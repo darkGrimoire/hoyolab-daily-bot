@@ -8,7 +8,8 @@ import requests
 import browser_cookie3
 import json
 
-VER = '1.0 for Windows'
+VER = '1.0.9 for Windows'
+UPDATE_CHANNEL = 'https://github.com/darkGrimoire/hoyolab-daily-bot/releases/latest'
 
 run_scheduler = True
 
@@ -62,9 +63,25 @@ try:
         raise Exception("ERROR: Browser not defined!")
 except Exception as e:
     print("Login information not found! Please login first to hoyolab once in Chrome/Firefox/Opera/Edge/Chromium before using the bot.")
-    print("You only need to login once for a year to https://www.hoyolab.com/genshin/ for this bot")
+    print("You only need to login once for a year to https://www.hoyolab.com/genshin/ for this bot to work.")
+    log.write("Login information not found! Please login first to hoyolab once in Chrome/Firefox/Opera/Edge/Chromium before using the bot.\n")
     log.write('LOGIN ERROR: cookies not found\n')
     log.close()
+    time.sleep(5)
+    sys.exit(1)
+
+found = False
+for cookie in cookies:
+    if cookie.name == "cookie_token":
+        found = True
+        break
+if not found:
+    print("Login information not found! Please login first to hoyolab once in Chrome/Firefox/Opera/Edge/Chromium before using the bot.")
+    print("You only need to login once for a year to https://www.hoyolab.com/genshin/ for this bot to work.")
+    log.write("Login information not found! Please login first to hoyolab once in Chrome/Firefox/Opera/Edge/Chromium before using the bot.\n")
+    log.write('LOGIN ERROR: cookies not found\n')
+    log.close()
+    time.sleep(5)
     sys.exit(1)
 
 # ARGPARSE
@@ -176,6 +193,16 @@ def configScheduler():
     else:
         print("Program scheduled daily!")
 
+# UPDATE CHECKER
+def checkUpdates():
+    res = requests.get(UPDATE_CHANNEL)
+    newVer = res.url.split('/')[-1][1:]
+    thisVer = VER.split()[0]
+    if newVer > thisVer:
+        print(f'New version (v{newVer}) available!\nPlease go to {UPDATE_CHANNEL} to download the new version.')
+        log.write(f'New version (v{newVer}) available!\nPlease go to {UPDATE_CHANNEL} to download the new version.')
+        time.sleep(60)
+
 # MAIN PROGRAM
 def main():
     log.write(f'\nSTART BOT: {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}\n')
@@ -199,6 +226,7 @@ def main():
             log.write(f'Error at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}, retrying...\n')
             print("There was an error... retrying in a minute")
             time.sleep(60)
+    checkUpdates()
     log.close()
 
 if __name__ == "__main__":
