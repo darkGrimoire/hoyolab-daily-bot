@@ -8,7 +8,7 @@ import requests
 import browser_cookie3
 import json
 
-VER = '1.0.9 for Windows'
+VER = '1.1.0 for Windows'
 UPDATE_CHANNEL = 'https://github.com/darkGrimoire/hoyolab-daily-bot/releases/latest'
 
 run_scheduler = True
