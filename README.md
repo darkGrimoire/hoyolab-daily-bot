@@ -18,7 +18,7 @@ Genshin Impact's Hoyolab Daily Check-in Bot is here! The concept is simple, **ru
 2. Run program and click Yes when prompted. The program needs to be run as administrator to enable scheduling
 3. You can see what's the bot doing from `botlog.txt`.
 
-# Configuration File
+# Configuration File (v1.1.0+)
 - **BROWSER**: You can target specific browser to be used for login. Please beware that this program doesn't support account chooser yet, so if you have multiple account you may use a browser you rarely use that only contains 1 account information.  
 Currently supported browsers are: `firefox`, `chrome`, `chromium`, `opera`, and `edge`. The default is `all`.
 - **SERVER_UTC**: Server UTC in each server is different. You can check your UTC in [Your Hoyolab Daily Check-in page.](https://webstatic-sea.mihoyo.com/ys/event/signin-sea/index.html?act_id=e202102251931481&lang=en-us) The default for Asia server is +8 UTC.
