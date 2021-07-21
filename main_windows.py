@@ -7,6 +7,7 @@ import subprocess
 import requests
 import browser_cookie3
 import json
+import http.cookies
 
 VER = '1.1.0 for Windows'
 UPDATE_CHANNEL = 'https://github.com/darkGrimoire/hoyolab-daily-bot/releases/latest'
@@ -47,7 +48,12 @@ except Exception as e:
 # GET COOKIES
 cookies = None
 try:
-    if config['BROWSER'].lower() == 'all':
+    if os.getenv('MIHOYO_COOKIES'):
+        raw_cookie_line = os.getenv('MIHOYO_COOKIES')
+        simple_cookie = http.cookies.SimpleCookie(raw_cookie_line)
+        cookies = requests.cookies.RequestsCookieJar()
+        cookies.update(simple_cookie)
+    elif config['BROWSER'].lower() == 'all':
         cookies = browser_cookie3.load(domain_name=config['DOMAIN_NAME'])
     elif config['BROWSER'].lower() == 'firefox':
         cookies = browser_cookie3.firefox(domain_name=config['DOMAIN_NAME'])
