@@ -1,0 +1,24 @@
+name: Daily reward
+
+on:
+  schedule:
+    - cron: "0 5 * * *"
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Get daily reward
+        env:
+          MIHOYO_COOKIES: ${{ secrets.MIHOYO_COOKIES }}
+        run: python main_windows.py -R
