@@ -1,6 +1,8 @@
 name: Daily reward
 
 on:
+  push:
+    branches: ['gh_action']
   schedule:
     - cron: "0 5 * * *"
 
