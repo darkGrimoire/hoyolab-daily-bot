@@ -3,12 +3,13 @@ import time
 from datetime import datetime, timedelta
 import os
 import sys
+from random import randint
 import subprocess
 import requests
 import browser_cookie3
 import json
 
-VER = '1.1.0 for Windows'
+VER = '1.1.5 for Windows'
 UPDATE_CHANNEL = 'https://github.com/darkGrimoire/hoyolab-daily-bot/releases/latest'
 
 run_scheduler = True
@@ -19,17 +20,20 @@ if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     exec_path = sys.executable
 else:
     app_path = os.path.dirname(os.path.abspath(__file__))
-    exec_path = f"python \'{os.path.abspath(__file__)}\'"
+    exec_path = "run.bat"
 
 # SETUP LOGGING
 log = open(os.path.join(app_path, 'botlog.txt'), 'a+')
 
 # SETUP CONFIG
 config = None
+config_params = ['BROWSER', 'SERVER_UTC', 'DELAY_MINUTE', 'RANDOMIZE',
+                 'RANDOM_RANGE', 'ACT_ID', 'DOMAIN_NAME', 'SCHEDULER_NAME']
 try:
     config = json.load(open(os.path.join(app_path, 'config.json'), 'r'))
-    if 'BROWSER' not in config or 'SERVER_UTC' not in config or 'DELAY_MINUTE' not in config or 'ACT_ID' not in config or 'DOMAIN_NAME' not in config:
-        raise Exception("ERROR: Broken config file")
+    for param in config_params:
+        if param not in config:
+            raise Exception(f"ERROR: Broken config file, {param} not found")
 except Exception as e:
     print(repr(e))
     print("Config not found/corrupted! Making default config...")
@@ -37,8 +41,11 @@ except Exception as e:
         'BROWSER': 'all',
         'SERVER_UTC': 8,
         'DELAY_MINUTE': 0,
+        'RANDOMIZE': False,
+        'RANDOM_RANGE': 3600,
         'ACT_ID': 'e202102251931481',
-        'DOMAIN_NAME': '.mihoyo.com'
+        'DOMAIN_NAME': '.mihoyo.com',
+        'SCHEDULER_NAME': 'HoyolabCheckInBot'
     }
     config_file = open(os.path.join(app_path, 'config.json'), 'w')
     config_file.write(json.dumps(config))
@@ -87,8 +94,10 @@ if not found:
 # ARGPARSE
 help_text = 'Genshin Hoyolab Daily Check-In Bot\nWritten by darkGrimoire'
 parser = argparse.ArgumentParser(description=help_text)
-parser.add_argument("-v", "--version", help="show program version", action="store_true")
-parser.add_argument("-R", "--runascron", help="run program without scheduler", action="store_true")
+parser.add_argument("-v", "--version",
+                    help="show program version", action="store_true")
+parser.add_argument("-R", "--runascron",
+                    help="run program without scheduler", action="store_true")
 
 args = parser.parse_args()
 if args.version:
@@ -97,6 +106,7 @@ if args.version:
     sys.exit(0)
 if args.runascron:
     run_scheduler = False
+
 
 # API FUNCTIONS
 def getDailyStatus():
@@ -115,7 +125,8 @@ def getDailyStatus():
     )
 
     try:
-        response = requests.get('https://hk4e-api-os.mihoyo.com/event/sol/info', headers=headers, params=params, cookies=cookies)
+        response = requests.get('https://hk4e-api-os.mihoyo.com/event/sol/info',
+                                headers=headers, params=params, cookies=cookies)
         return response.json()
     except requests.exceptions.ConnectionError as e:
         print("CONNECTION ERROR: cannot get daily check-in status")
@@ -130,12 +141,14 @@ def getDailyStatus():
         log.write(repr(e) + '\n')
         return None
 
+
 def isClaimed():
     resp = getDailyStatus()
     if resp:
         return resp['data']['is_sign']
     else:
         return None
+
 
 def claimReward():
     headers = {
@@ -151,10 +164,11 @@ def claimReward():
         ('lang', 'en-us'),
     )
 
-    data = { 'act_id':config['ACT_ID'] }
+    data = {'act_id': config['ACT_ID']}
 
     try:
-        response = requests.post('https://hk4e-api-os.mihoyo.com/event/sol/sign', headers=headers, params=params, cookies=cookies, json=data)
+        response = requests.post('https://hk4e-api-os.mihoyo.com/event/sol/sign',
+                                 headers=headers, params=params, cookies=cookies, json=data)
         return response.json()
     except requests.exceptions.ConnectionError as e:
         print("CONNECTION ERROR: cannot claim daily check-in reward")
@@ -176,22 +190,29 @@ def configScheduler():
     cur_tz_offset = datetime.now().astimezone().utcoffset()
     target_tz_offset = timedelta(hours=config['SERVER_UTC'])
     delta = (cur_tz_offset - target_tz_offset)
-    target = int((24 + (delta.total_seconds()//3600)) % 24)
+    delta += timedelta(minutes=int(config['DELAY_MINUTE']))
+    if (config['RANDOMIZE']):
+        delta += timedelta(seconds=randint(0, int(config['RANDOM_RANGE'])))
+    target_hour = int((24 + (delta.total_seconds()//3600)) % 24)
+    target_minute = int((60 + (delta.total_seconds()//60)) % 60)
+    target_seconds = int(delta.total_seconds() % 60)
     ret_code = subprocess.call((
         f'powershell',
-        f'$Time = New-ScheduledTaskTrigger -Daily -At {target}:{config["DELAY_MINUTE"]} \n',
-        f'$Action = New-ScheduledTaskAction -Execute "{exec_path}" -Argument "-R" \n',
+        f'$Time = New-ScheduledTaskTrigger -Daily -At {target_hour}:{target_minute}:{target_seconds} \n',
+        f'$Action = New-ScheduledTaskAction -Execute \'{exec_path}\' {"" if config["RANDOMIZE"] else "-Argument -R"} -WorkingDirectory "{app_path}" \n',
         f'$Setting = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -WakeToRun -RunOnlyIfNetworkAvailable -MultipleInstances Parallel -Priority 3 -RestartCount 30 -RestartInterval (New-TimeSpan -Minutes 1) \n',
-        f'Register-ScheduledTask -Force -TaskName "HoyolabCheckInBot" -Trigger $Time -Action $Action -Settings $Setting -Description "Genshin Hoyolab Daily Check-In Bot {VER}" -RunLevel Highest'
+        f'Register-ScheduledTask -Force -TaskName "{config["SCHEDULER_NAME"]}" -Trigger $Time -Action $Action -Settings $Setting -Description "Genshin Hoyolab Daily Check-In Bot {VER}" -RunLevel Highest'
     ), creationflags=0x08000000)
     if ret_code:
         print("PERMISSION ERROR: please run as administrator to enable task scheduling")
-        log.write("PERMISSION ERROR: please run as administrator to enable task scheduling\n")
+        log.write(
+            "PERMISSION ERROR: please run as administrator to enable task scheduling\n")
         log.close()
         input()
         sys.exit(1)
     else:
         print("Program scheduled daily!")
+
 
 # UPDATE CHECKER
 def checkUpdates():
@@ -199,9 +220,12 @@ def checkUpdates():
     newVer = res.url.split('/')[-1][1:]
     thisVer = VER.split()[0]
     if newVer > thisVer:
-        print(f'New version (v{newVer}) available!\nPlease go to {UPDATE_CHANNEL} to download the new version.')
-        log.write(f'New version (v{newVer}) available!\nPlease go to {UPDATE_CHANNEL} to download the new version.')
+        print(
+            f'New version (v{newVer}) available!\nPlease go to {UPDATE_CHANNEL} to download the new version.')
+        log.write(
+            f'New version (v{newVer}) available!\nPlease go to {UPDATE_CHANNEL} to download the new version.')
         time.sleep(60)
+
 
 # MAIN PROGRAM
 def main():
@@ -214,23 +238,27 @@ def main():
             print("Reward not claimed yet. Claiming reward...")
             resp = claimReward()
             if resp:
-                log.write(f'Reward claimed at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}\n')
+                log.write(
+                    f'Reward claimed at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}\n')
                 print("Claiming completed! message:")
                 print(resp['message'])
                 is_done = True
         if check:
-            log.write(f'Reward already claimed when checked at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}\n')
+            log.write(
+                f'Reward already claimed when checked at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}\n')
             print("Reward has been claimed!")
             is_done = True
         if not is_done:
-            log.write(f'Error at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}, retrying...\n')
+            log.write(
+                f'Error at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}, retrying...\n')
             print("There was an error... retrying in a minute")
             time.sleep(60)
     checkUpdates()
     log.close()
 
+
 if __name__ == "__main__":
-    if run_scheduler:
+    if run_scheduler or config["RANDOMIZE"]:
         configScheduler()
     main()
     time.sleep(2)
