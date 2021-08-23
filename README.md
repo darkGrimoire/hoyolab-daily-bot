@@ -23,6 +23,9 @@ Genshin Impact's Hoyolab Daily Check-in Bot is here! The concept is simple, **ru
 Currently supported browsers are: `firefox`, `chrome`, `chromium`, `opera`, and `edge`. The default is `all`.
 - **SERVER_UTC**: Server UTC in each server is different. You can check your UTC in [Your Hoyolab Daily Check-in page.](https://webstatic-sea.mihoyo.com/ys/event/signin-sea/index.html?act_id=e202102251931481&lang=en-us) The default for Asia server is +8 UTC.
 - **DELAY_MINUTE**: Sometimes, your PC is some minutes earlier than the server time. If you're experiencing reward already claimed whenever the bot started, please add some delay.
+- **RANDOMIZER**: Turn on (`true`) or off (`false`) for randomizing bot scheduler. Default is `false`
+- **RANDOM_RANGE**: Range in seconds for randomizing bot scheduler. Default is `3600` (means the bot will starts delayed randomly within 1 hour after daily reset).
+- **SCHEDULER_NAME**: The name of the bot scheduler. With this, you can have multiple bot scheduled with different configurations. For example, in one folder the bot is configured to login from chrome, while the other one is configured to login from firefox. The default is "HoyolabCheckInBot".
 - **ACT_ID** and **DOMAIN_NAME** doesn't need changing. It's only there for futureproof reasons.
 
 # How to update 📈
@@ -39,7 +42,6 @@ Just overwrite the executable file haha
    ```
    pip install -r requirements.txt
    ```
-3. Run `main_windows.py` as administrator if you want to run the scheduling, or if not use `main_windows.py -R`
-
+3. Run `python main_windows.py` or `run.bat` as administrator if you want to run the scheduling, or if not use `python main_windows.py -R` or `run.bat -R`.
 
 Feel free to open up issues for feature request, bugs, etc. or contribute.
