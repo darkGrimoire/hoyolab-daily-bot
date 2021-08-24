@@ -35,8 +35,8 @@ Just overwrite the executable file haha
 1. Setup virtualenv
    ```
    pip install virtualenv
-   python -m venv env
-   env\Scripts\activate
+   python -m venv venv
+   venv\Scripts\activate
    ```
 2. Install dependencies
    ```
