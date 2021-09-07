@@ -43,5 +43,6 @@ Just overwrite the executable file haha
    pip install -r requirements.txt
    ```
 3. Run `python main_windows.py` or `run.bat` as administrator if you want to run the scheduling, or if not use `python main_windows.py -R` or `run.bat -R`.
+4. Use Pyinstaller to compile into binary.
 
 Feel free to open up issues for feature request, bugs, etc. or contribute.
