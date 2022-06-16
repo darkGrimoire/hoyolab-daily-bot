@@ -66,6 +66,8 @@ try:
         cookies = browser_cookie3.edge(domain_name=config['DOMAIN_NAME'])
     elif config['BROWSER'].lower() == 'chromium':
         cookies = browser_cookie3.chromium(domain_name=config['DOMAIN_NAME'])
+    elif config['BROWSER'].lower() == 'vivaldi':
+        cookies = browser_cookie3.vivaldi(domain_name=config['DOMAIN_NAME'])
     else:
         raise Exception("ERROR: Browser not defined!")
 except Exception as e:
