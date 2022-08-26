@@ -44,7 +44,7 @@ except Exception as e:
         'RANDOMIZE': False,
         'RANDOM_RANGE': 3600,
         'ACT_ID': 'e202102251931481',
-        'DOMAIN_NAME': '.mihoyo.com',
+        'DOMAIN_NAME': '.hoyolab.com',
         'SCHEDULER_NAME': 'HoyolabCheckInBot'
     }
     config_file = open(os.path.join(app_path, 'config.json'), 'w')
@@ -113,9 +113,9 @@ def getDailyStatus():
     headers = {
         'Accept': 'application/json, text/plain, */*',
         'Accept-Language': 'en-US,en;q=0.5',
-        'Origin': 'https://webstatic-sea.mihoyo.com',
+        'Origin': 'https://act.hoyolab.com',
         'Connection': 'keep-alive',
-        'Referer': f'https://webstatic-sea.mihoyo.com/ys/event/signin-sea/index.html?act_id={config["ACT_ID"]}&lang=en-us',
+        'Referer': f'https://act.hoyolab.com/ys/event/signin-sea-v3/index.html?act_id={config["ACT_ID"]}&lang=en-us',
         'Cache-Control': 'max-age=0',
     }
 
@@ -125,7 +125,7 @@ def getDailyStatus():
     )
 
     try:
-        response = requests.get('https://hk4e-api-os.mihoyo.com/event/sol/info',
+        response = requests.get('https://sg-hk4e-api.hoyolab.com/event/sol/info',
                                 headers=headers, params=params, cookies=cookies)
         return response.json()
     except requests.exceptions.ConnectionError as e:
@@ -155,9 +155,9 @@ def claimReward():
         'Accept': 'application/json, text/plain, */*',
         'Accept-Language': 'en-US,en;q=0.5',
         'Content-Type': 'application/json;charset=utf-8',
-        'Origin': 'https://webstatic-sea.mihoyo.com',
+        'Origin': 'https://act.hoyolab.com',
         'Connection': 'keep-alive',
-        'Referer': f'https://webstatic-sea.mihoyo.com/ys/event/signin- sea/index.html?act_id={config["ACT_ID"]}&lang=en-us',
+        'Referer': f'https://act.hoyolab.com/ys/event/signin-sea-v3/index.html?act_id={config["ACT_ID"]}&lang=en-us',
     }
 
     params = (
@@ -167,7 +167,7 @@ def claimReward():
     data = {'act_id': config['ACT_ID']}
 
     try:
-        response = requests.post('https://hk4e-api-os.mihoyo.com/event/sol/sign',
+        response = requests.post('https://sg-hk4e-api.hoyolab.com/event/sol/sign',
                                  headers=headers, params=params, cookies=cookies, json=data)
         return response.json()
     except requests.exceptions.ConnectionError as e:
