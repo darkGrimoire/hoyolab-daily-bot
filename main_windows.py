@@ -79,7 +79,7 @@ except Exception as e:
 
 found = False
 for cookie in cookies:
-    if cookie.name == "cookie_token":
+    if cookie.name == "ltoken":
         found = True
         break
 if not found:
