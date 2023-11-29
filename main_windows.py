@@ -109,7 +109,7 @@ if args.runascron:
 
 
 # API FUNCTIONS
-def getDailyStatus():
+def get_daily_status():
     headers = {
         'Accept': 'application/json, text/plain, */*',
         'Accept-Language': 'en-US,en;q=0.5',
@@ -142,15 +142,15 @@ def getDailyStatus():
         return None
 
 
-def isClaimed():
-    resp = getDailyStatus()
+def is_claimed():
+    resp = get_daily_status()
     if resp:
         return resp['data']['is_sign']
     else:
         return None
 
 
-def claimReward():
+def claim_reward():
     headers = {
         'Accept': 'application/json, text/plain, */*',
         'Accept-Language': 'en-US,en;q=0.5',
@@ -185,13 +185,13 @@ def claimReward():
 
 
 # SCHEDULER CONFIGURATION
-def configScheduler():
+def config_scheduler():
     print("Running scheduler...")
     cur_tz_offset = datetime.now().astimezone().utcoffset()
     target_tz_offset = timedelta(hours=config['SERVER_UTC'])
     delta = (cur_tz_offset - target_tz_offset)
     delta += timedelta(minutes=int(config['DELAY_MINUTE']))
-    if (config['RANDOMIZE']):
+    if config['RANDOMIZE']:
         delta += timedelta(seconds=randint(0, int(config['RANDOM_RANGE'])))
     target_hour = int((24 + (delta.total_seconds()//3600)) % 24)
     target_minute = int((60 + (delta.total_seconds()//60)) % 60)
@@ -215,15 +215,15 @@ def configScheduler():
 
 
 # UPDATE CHECKER
-def checkUpdates():
+def check_updates():
     res = requests.get(UPDATE_CHANNEL)
-    newVer = res.url.split('/')[-1][1:]
-    thisVer = VER.split()[0]
-    if newVer > thisVer:
+    new_ver = res.url.split('/')[-1][1:]
+    this_ver = VER.split()[0]
+    if new_ver > this_ver:
         print(
-            f'New version (v{newVer}) available!\nPlease go to {UPDATE_CHANNEL} to download the new version.')
+            f'New version (v{new_ver}) available!\nPlease go to {UPDATE_CHANNEL} to download the new version.')
         log.write(
-            f'New version (v{newVer}) available!\nPlease go to {UPDATE_CHANNEL} to download the new version.')
+            f'New version (v{new_ver}) available!\nPlease go to {UPDATE_CHANNEL} to download the new version.')
         time.sleep(60)
 
 
@@ -233,10 +233,10 @@ def main():
     print("Connecting to mihoyo...")
     is_done = False
     while not is_done:
-        check = isClaimed()
-        if not check and check != None:
+        check = is_claimed()
+        if not check and check is not None:
             print("Reward not claimed yet. Claiming reward...")
-            resp = claimReward()
+            resp = claim_reward()
             if resp:
                 log.write(
                     f'Reward claimed at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}\n')
@@ -253,12 +253,12 @@ def main():
                 f'Error at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}, retrying...\n')
             print("There was an error... retrying in a minute")
             time.sleep(60)
-    checkUpdates()
+    check_updates()
     log.close()
 
 
 if __name__ == "__main__":
     if run_scheduler or config["RANDOMIZE"]:
-        configScheduler()
+        config_scheduler()
     main()
     time.sleep(2)
