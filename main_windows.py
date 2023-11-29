@@ -50,14 +50,22 @@ except Exception as e:
     config_file = open(os.path.join(app_path, 'config.json'), 'w')
     config_file.write(json.dumps(config))
 
+
 # GET COOKIES
 cookies = None
 try:
-    browser = config['BROWSER'].lower()
-    if browser == 'all':
+    if config['BROWSER'].lower() == 'all':
         cookies = browser_cookie3.load(domain_name=config['DOMAIN_NAME'])
-    elif browser in ['firefox', 'chrome', 'opera', 'edge', 'chromium']:
-        cookies = getattr(browser_cookie3, browser)(domain_name=config['DOMAIN_NAME'])
+    elif config['BROWSER'].lower() == 'firefox':
+        cookies = browser_cookie3.firefox(domain_name=config['DOMAIN_NAME'])
+    elif config['BROWSER'].lower() == 'chrome':
+        cookies = browser_cookie3.chrome(domain_name=config['DOMAIN_NAME'])
+    elif config['BROWSER'].lower() == 'opera':
+        cookies = browser_cookie3.opera(domain_name=config['DOMAIN_NAME'])
+    elif config['BROWSER'].lower() == 'edge':
+        cookies = browser_cookie3.edge(domain_name=config['DOMAIN_NAME'])
+    elif config['BROWSER'].lower() == 'chromium':
+        cookies = browser_cookie3.chromium(domain_name=config['DOMAIN_NAME'])
     else:
         raise Exception("ERROR: Browser not defined!")
 except Exception as e:
@@ -185,8 +193,8 @@ def config_scheduler():
     delta += timedelta(minutes=int(config['DELAY_MINUTE']))
     if config['RANDOMIZE']:
         delta += timedelta(seconds=randint(0, int(config['RANDOM_RANGE'])))
-    target_hour = int((24 + (delta.total_seconds() // 3600)) % 24)
-    target_minute = int((60 + (delta.total_seconds() // 60)) % 60)
+    target_hour = int((24 + (delta.total_seconds()//3600)) % 24)
+    target_minute = int((60 + (delta.total_seconds()//60)) % 60)
     target_seconds = int(delta.total_seconds() % 60)
     ret_code = subprocess.call((
         f'powershell',
