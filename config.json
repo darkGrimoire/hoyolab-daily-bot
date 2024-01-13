@@ -5,6 +5,6 @@
   "RANDOMIZE": true,
   "RANDOM_RANGE": 3600,
   "ACT_ID": "e202102251931481",
-  "DOMAIN_NAME": ".mihoyo.com",
+  "DOMAIN_NAME": ".hoyolab.com",
   "SCHEDULER_NAME": "HoyolabCheckInBot"
 }

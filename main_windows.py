@@ -9,15 +9,15 @@ import requests
 import browser_cookie3
 import json
 
-VER = '1.1.5 for Windows'
-UPDATE_CHANNEL = 'https://github.com/darkGrimoire/hoyolab-daily-bot/releases/latest'
-
 run_scheduler = True
 
 # INITIALIZE PROGRAM ENVIRONMENT
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     app_path = os.path.dirname(sys.executable)
     exec_path = sys.executable
+    print(exec_path)
+
+
 else:
     app_path = os.path.dirname(os.path.abspath(__file__))
     exec_path = "run.bat"
@@ -44,7 +44,7 @@ except Exception as e:
         'RANDOMIZE': False,
         'RANDOM_RANGE': 3600,
         'ACT_ID': 'e202102251931481',
-        'DOMAIN_NAME': '.mihoyo.com',
+        'DOMAIN_NAME': '.hoyolab.com',
         'SCHEDULER_NAME': 'HoyolabCheckInBot'
     }
     config_file = open(os.path.join(app_path, 'config.json'), 'w')
@@ -54,25 +54,28 @@ except Exception as e:
 # GET COOKIES
 cookies = None
 try:
-    if config['BROWSER'].lower() == 'all':
-        cookies = browser_cookie3.load(domain_name=config['DOMAIN_NAME'])
-    elif config['BROWSER'].lower() == 'firefox':
-        cookies = browser_cookie3.firefox(domain_name=config['DOMAIN_NAME'])
-    elif config['BROWSER'].lower() == 'chrome':
-        cookies = browser_cookie3.chrome(domain_name=config['DOMAIN_NAME'])
-    elif config['BROWSER'].lower() == 'opera':
-        cookies = browser_cookie3.opera(domain_name=config['DOMAIN_NAME'])
-    elif config['BROWSER'].lower() == 'edge':
-        cookies = browser_cookie3.edge(domain_name=config['DOMAIN_NAME'])
-    elif config['BROWSER'].lower() == 'chromium':
-        cookies = browser_cookie3.chromium(domain_name=config['DOMAIN_NAME'])
-    else:
-        raise Exception("ERROR: Browser not defined!")
+    cookies = browser_cookie3.firefox(domain_name=config['DOMAIN_NAME'])
+
+    # if config['BROWSER'] == 'all':
+    #     cookies = browser_cookie3.load(domain_name=config['DOMAIN_NAME'])
+    # elif config['BROWSER'].lower() == 'firefox':
+    #     cookies = browser_cookie3.firefox(domain_name=config['DOMAIN_NAME'])
+    # elif config['BROWSER'].lower() == 'chrome':
+    #     cookies = browser_cookie3.chrome(domain_name=config['DOMAIN_NAME'])
+    # elif config['BROWSER'].lower() == 'opera':
+    #     cookies = browser_cookie3.opera(domain_name=config['DOMAIN_NAME'])
+    # elif config['BROWSER'].lower() == 'edge':
+    #     cookies = browser_cookie3.edge(domain_name=config['DOMAIN_NAME'])
+    # elif config['BROWSER'].lower() == 'chromium':
+    #     cookies = browser_cookie3.chromium(domain_name=config['DOMAIN_NAME'])
+    # else:
+    #     raise Exception("ERROR: Browser not defined!")
 except Exception as e:
-    print("Login information not found! Please login first to hoyolab once in Chrome/Firefox/Opera/Edge/Chromium before using the bot.")
-    print("You only need to login once for a year to https://www.hoyolab.com/genshin/ for this bot to work.")
-    log.write("Login information not found! Please login first to hoyolab once in Chrome/Firefox/Opera/Edge/Chromium before using the bot.\n")
-    log.write('LOGIN ERROR: cookies not found\n')
+    # print("Login information not found! Please login first to hoyolab once in Chrome/Firefox/Opera/Edge/Chromium before using the bot.")
+    # print("You only need to login once for a year to https://www.hoyolab.com/genshin/ for this bot to work.")
+    print(e)
+    # log.write("Login information not found! Please login first to hoyolab once in Chrome/Firefox/Opera/Edge/Chromium before using the bot.\n")
+    # log.write('LOGIN ERROR: cookies not found\n')
     log.close()
     time.sleep(5)
     sys.exit(1)
@@ -101,7 +104,7 @@ parser.add_argument("-R", "--runascron",
 
 args = parser.parse_args()
 if args.version:
-    print(f"Bot ver. {VER}")
+    print(f"Bot ver. 1.1.6")
     log.close()
     sys.exit(0)
 if args.runascron:
@@ -109,79 +112,149 @@ if args.runascron:
 
 
 # API FUNCTIONS
-def getDailyStatus():
-    headers = {
-        'Accept': 'application/json, text/plain, */*',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Origin': 'https://act.hoyolab.com',
-        'Connection': 'keep-alive',
-        'Referer': f'https://act.hoyolab.com/ys/event/signin-sea-v3/index.html?act_id={config["ACT_ID"]}&lang=en-us',
-        'Cache-Control': 'max-age=0',
-    }
+def getDailyStatus(game):
+    if game == "genshin":
+        headers = {
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Origin': 'https://act.hoyolab.com',
+            'Connection': 'keep-alive',
+            'Referer': f'https://act.hoyolab.com/ys/event/signin-sea-v3/index.html?act_id={config["ACT_ID"]}&lang=en-us',
+            'Cache-Control': 'max-age=0',
+        }
 
-    params = (
-        ('lang', 'en-us'),
-        ('act_id', config['ACT_ID']),
-    )
+        params = (
+            ('lang', 'en-us'),
+            ('act_id', config['ACT_ID']),
+        )
 
-    try:
-        response = requests.get('https://sg-hk4e-api.hoyolab.com/event/sol/info',
-                                headers=headers, params=params, cookies=cookies)
-        return response.json()
-    except requests.exceptions.ConnectionError as e:
-        print("CONNECTION ERROR: cannot get daily check-in status")
-        print(e)
-        log.write('CONNECTION ERROR: cannot get daily check-in status\n')
-        log.write(repr(e) + '\n')
-        return None
-    except Exception as e:
-        print("ERROR: ")
-        print(e)
-        log.write('UNKNOWN ERROR:\n')
-        log.write(repr(e) + '\n')
-        return None
+        try:
+            response = requests.get('https://sg-hk4e-api.hoyolab.com/event/sol/info',
+                                    headers=headers, params=params, cookies=cookies)
+            print(response.json())
+            return response.json()
+        except requests.exceptions.ConnectionError as e:
+            print("CONNECTION ERROR: cannot get daily check-in status")
+            print(e)
+            log.write('CONNECTION ERROR: cannot get daily check-in status\n')
+            log.write(repr(e) + '\n')
+            return None
+        except Exception as e:
+            print("ERROR: ")
+            print(e)
+            log.write('UNKNOWN ERROR:\n')
+            log.write(repr(e) + '\n')
+            return None
+        
+    elif game == "honkai":
+        headers = {
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Origin': 'https://act.hoyolab.com',
+            'Connection': 'keep-alive',
+            'Referer': f'https://act.hoyolab.com/bbs/event/signin/hkrpg/index.html?act_id=e202303301540311&lang=en-us',
+            'Cache-Control': 'max-age=0',
+        }
 
+        params = (
+            ('lang', 'en-us'),
+            ('act_id', "e202303301540311"),
+        )
 
-def isClaimed():
-    resp = getDailyStatus()
+        try:
+            response = requests.get('https://sg-public-api.hoyolab.com/event/luna/os/info',
+                                    headers=headers, params=params, cookies=cookies)
+            print(response.json())
+            return response.json()
+        except requests.exceptions.ConnectionError as e:
+            print("CONNECTION ERROR: cannot get daily check-in status")
+            print(e)
+            log.write('CONNECTION ERROR: cannot get daily check-in status\n')
+            log.write(repr(e) + '\n')
+            return None
+        except Exception as e:
+            print("ERROR: ")
+            print(e)
+            log.write('UNKNOWN ERROR:\n')
+            log.write(repr(e) + '\n')
+            return None
+
+def isClaimed(game):
+    print(game)
+    resp = getDailyStatus(game)
     if resp:
         return resp['data']['is_sign']
     else:
         return None
 
 
-def claimReward():
-    headers = {
-        'Accept': 'application/json, text/plain, */*',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Content-Type': 'application/json;charset=utf-8',
-        'Origin': 'https://act.hoyolab.com',
-        'Connection': 'keep-alive',
-        'Referer': f'https://act.hoyolab.com/ys/event/signin-sea-v3/index.html?act_id={config["ACT_ID"]}&lang=en-us',
-    }
+def claimReward(game):
+    if game == "genshin":
+        headers = {
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Content-Type': 'application/json;charset=utf-8',
+            'Origin': 'https://act.hoyolab.com',
+            'Connection': 'keep-alive',
+            'Referer': f'https://act.hoyolab.com/ys/event/signin-sea-v3/index.html?act_id={config["ACT_ID"]}&lang=en-us',
+        }
 
-    params = (
-        ('lang', 'en-us'),
-    )
+        params = (
+            ('lang', 'en-us'),
+        )
 
-    data = {'act_id': config['ACT_ID']}
+        data = {'act_id': config['ACT_ID']}
 
-    try:
-        response = requests.post('https://sg-hk4e-api.hoyolab.com/event/sol/sign',
-                                 headers=headers, params=params, cookies=cookies, json=data)
-        return response.json()
-    except requests.exceptions.ConnectionError as e:
-        print("CONNECTION ERROR: cannot claim daily check-in reward")
-        print(e)
-        log.write('CONNECTION ERROR: cannot claim daily check-in reward\n')
-        log.write(repr(e) + '\n')
-        return None
-    except Exception as e:
-        print("ERROR: ")
-        print(e)
-        log.write('UNKNOWN ERROR:\n')
-        log.write(repr(e) + '\n')
-        return None
+        try:
+            response = requests.post('https://sg-hk4e-api.hoyolab.com/event/sol/sign',
+                                    headers=headers, params=params, cookies=cookies, json=data)
+            return response.json()
+            
+        except requests.exceptions.ConnectionError as e:
+            print("CONNECTION ERROR: cannot claim daily check-in reward")
+            print(e)
+            log.write('CONNECTION ERROR: cannot claim daily check-in reward\n')
+            log.write(repr(e) + '\n')
+            return None
+        except Exception as e:
+            print("ERROR: ")
+            print(e)
+            log.write('UNKNOWN ERROR:\n')
+            log.write(repr(e) + '\n')
+            return None
+    elif game == "honkai":
+        headers = {
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Content-Type': 'application/json;charset=utf-8',
+            'Origin': 'https://act.hoyolab.com',
+            'Connection': 'keep-alive',
+            'Referer': f'https://act.hoyolab.com/bbs/event/signin/hkrpg/index.html?act_id=e202303301540311&lang=en-us',
+        }
+
+        params = (
+            ('lang', 'en-us'),
+        )
+
+        data = {'act_id': "e202303301540311"}
+
+        try:
+            response = requests.post('https://sg-public-api.hoyolab.com/event/luna/os/sign',
+                                    headers=headers, params=params, cookies=cookies, json=data)
+            return response.json()
+            
+        except requests.exceptions.ConnectionError as e:
+            print("CONNECTION ERROR: cannot claim daily check-in reward")
+            print(e)
+            log.write('CONNECTION ERROR: cannot claim daily check-in reward\n')
+            log.write(repr(e) + '\n')
+            return None
+        except Exception as e:
+            print("ERROR: ")
+            print(e)
+            log.write('UNKNOWN ERROR:\n')
+            log.write(repr(e) + '\n')
+            return None
 
 
 # SCHEDULER CONFIGURATION
@@ -201,7 +274,7 @@ def configScheduler():
         f'$Time = New-ScheduledTaskTrigger -Daily -At {target_hour}:{target_minute}:{target_seconds} \n',
         f'$Action = New-ScheduledTaskAction -Execute \'{exec_path}\' {"" if config["RANDOMIZE"] else "-Argument -R"} -WorkingDirectory "{app_path}" \n',
         f'$Setting = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -WakeToRun -RunOnlyIfNetworkAvailable -MultipleInstances Parallel -Priority 3 -RestartCount 30 -RestartInterval (New-TimeSpan -Minutes 1) \n',
-        f'Register-ScheduledTask -Force -TaskName "{config["SCHEDULER_NAME"]}" -Trigger $Time -Action $Action -Settings $Setting -Description "Genshin Hoyolab Daily Check-In Bot {VER}" -RunLevel Highest'
+        f'Register-ScheduledTask -Force -TaskName "{config["SCHEDULER_NAME"]}" -Trigger $Time -Action $Action -Settings $Setting -Description "Genshin Hoyolab Daily Check-In Bot 1.1.6" -RunLevel Highest'
     ), creationflags=0x08000000)
     if ret_code:
         print("PERMISSION ERROR: please run as administrator to enable task scheduling")
@@ -214,46 +287,36 @@ def configScheduler():
         print("Program scheduled daily!")
 
 
-# UPDATE CHECKER
-def checkUpdates():
-    res = requests.get(UPDATE_CHANNEL)
-    newVer = res.url.split('/')[-1][1:]
-    thisVer = VER.split()[0]
-    if newVer > thisVer:
-        print(
-            f'New version (v{newVer}) available!\nPlease go to {UPDATE_CHANNEL} to download the new version.')
-        log.write(
-            f'New version (v{newVer}) available!\nPlease go to {UPDATE_CHANNEL} to download the new version.')
-        time.sleep(60)
-
-
 # MAIN PROGRAM
 def main():
     log.write(f'\nSTART BOT: {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}\n')
     print("Connecting to mihoyo...")
-    is_done = False
-    while not is_done:
-        check = isClaimed()
-        if not check and check != None:
-            print("Reward not claimed yet. Claiming reward...")
-            resp = claimReward()
-            if resp:
+
+    games = ["genshin", "honkai"]
+
+    for game in games:
+        is_done = False
+        while not is_done:
+            check = isClaimed(game)
+            if not check and check != None:
+                print(f"{game} reward not claimed yet. Claiming reward...")
+                resp = claimReward(game)
+                if resp:
+                    log.write(
+                        f'{game} reward claimed at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}\n')
+                    print(f"{game} claiming completed! message:")
+                    print(resp['message'])
+                    is_done = True
+            if check:
                 log.write(
-                    f'Reward claimed at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}\n')
-                print("Claiming completed! message:")
-                print(resp['message'])
+                    f'{game} reward already claimed when checked at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}\n')
+                print(f"{game} reward has been claimed!")
                 is_done = True
-        if check:
-            log.write(
-                f'Reward already claimed when checked at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}\n')
-            print("Reward has been claimed!")
-            is_done = True
-        if not is_done:
-            log.write(
-                f'Error at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}, retrying...\n')
-            print("There was an error... retrying in a minute")
-            time.sleep(60)
-    checkUpdates()
+            if not is_done:
+                log.write(
+                    f'{game} rrror at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}, retrying...\n')
+                print(f"{game} there was an error... retrying in a minute")
+                time.sleep(60)
     log.close()
 
 
